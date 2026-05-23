@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  --background: #08110f;
+  --foreground: #f5f1e8;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-mono: "Cascadia Mono", Consolas, monospace;
+}
+
+html {
+  min-height: 100%;
+  background: var(--background);
+}
+
+body {
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+  font-family:
+    Arial,
+    Helvetica,
+    "Noto Serif SC",
+    "Songti SC",
+    "SimSun",
+    serif;
+}
+
+.search-input {
+  min-height: 3rem;
+  border: 1px solid rgb(120 113 108 / 0.7);
+  background: rgb(0 0 0 / 0.25);
+  padding: 0 1rem;
+  color: #f5f1e8;
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: rgb(120 113 108);
+}
+
+.search-input:focus {
+  border-color: rgb(253 230 138 / 0.55);
+}
