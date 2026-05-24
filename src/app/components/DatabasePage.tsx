@@ -34,17 +34,20 @@ export function DatabasePage({
             西域文献史料汇集
           </Link>
           <nav className="flex flex-wrap gap-4 text-sm text-stone-400">
-            <Link className="transition hover:text-stone-100" href="/research">
+            <Link className="transition hover:text-stone-100" href="/papers">
               研究论著
             </Link>
             <Link className="transition hover:text-stone-100" href="/sources">
               历史史料
             </Link>
-            <Link className="transition hover:text-stone-100" href="/databases">
+            <Link className="transition hover:text-stone-100" href="/topics">
               专题数据库
             </Link>
-            <Link className="transition hover:text-stone-100" href="/navigation">
+            <Link className="transition hover:text-stone-100" href="/resources">
               资源导航
+            </Link>
+            <Link className="transition hover:text-stone-100" href="/upload">
+              上传资源
             </Link>
           </nav>
         </header>

@@ -1,21 +1,30 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 
-type SourceName = "OpenAlex" | "Crossref" | "Internet Archive";
-type SourceFilter = "全部" | SourceName;
+type SourceName =
+  | "OpenAlex"
+  | "Crossref"
+  | "Internet Archive"
+  | "Google Books"
+  | "WorldCat"
+  | "Gallica"
+  | "Qatar Digital Library";
+type ResultCategory = "论文" | "图书" | "档案" | "手稿" | "数字馆藏";
+type CategoryFilter = "全部" | ResultCategory;
+type SortMode = "相关度" | "时间" | "作者";
 
 type SearchResult = {
   id: string;
   source: SourceName;
+  category: ResultCategory;
   title: string;
   authors: string;
   year: string;
-  venue: string;
-  linkLabel: string;
   linkUrl: string;
   abstract: string;
+  relevance: number;
 };
 
 type OpenAlexWork = {
@@ -30,11 +39,6 @@ type OpenAlexWork = {
       display_name?: string | null;
     } | null;
   }[];
-  primary_location?: {
-    source?: {
-      display_name?: string | null;
-    } | null;
-  } | null;
 };
 
 type OpenAlexResponse = {
@@ -56,7 +60,6 @@ type CrossrefWork = {
   published?: {
     "date-parts"?: number[][];
   };
-  "container-title"?: string[];
   abstract?: string;
 };
 
@@ -71,7 +74,6 @@ type InternetArchiveDoc = {
   title?: string | string[];
   creator?: string | string[];
   year?: string | number | Array<string | number>;
-  language?: string | string[];
   description?: string | string[];
 };
 
@@ -81,12 +83,41 @@ type InternetArchiveResponse = {
   };
 };
 
-const sourceOptions: SourceFilter[] = [
-  "全部",
+type GoogleBookItem = {
+  id: string;
+  volumeInfo?: {
+    title?: string;
+    authors?: string[];
+    publishedDate?: string;
+    infoLink?: string;
+    description?: string;
+  };
+};
+
+type GoogleBooksResponse = {
+  items?: GoogleBookItem[];
+};
+
+const allSources: SourceName[] = [
   "OpenAlex",
   "Crossref",
   "Internet Archive",
+  "Google Books",
+  "WorldCat",
+  "Gallica",
+  "Qatar Digital Library",
 ];
+
+const categoryOptions: CategoryFilter[] = [
+  "全部",
+  "论文",
+  "图书",
+  "档案",
+  "手稿",
+  "数字馆藏",
+];
+
+const sortOptions: SortMode[] = ["相关度", "时间", "作者"];
 
 const quickSearchTags = [
   "金帐汗国",
@@ -123,11 +154,31 @@ export default function PapersPage() {
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [actualQuery, setActualQuery] = useState("");
-  const [sourceFilter, setSourceFilter] = useState<SourceFilter>("全部");
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("全部");
+  const [sortMode, setSortMode] = useState<SortMode>("相关度");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [sourceErrors, setSourceErrors] = useState<string[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const visibleResults = useMemo(() => {
+    const filteredResults =
+      categoryFilter === "全部"
+        ? results
+        : results.filter((result) => result.category === categoryFilter);
+
+    return [...filteredResults].sort((left, right) => {
+      if (sortMode === "时间") {
+        return parseYear(right.year) - parseYear(left.year);
+      }
+
+      if (sortMode === "作者") {
+        return left.authors.localeCompare(right.authors, "zh-CN");
+      }
+
+      return left.relevance - right.relevance;
+    });
+  }, [categoryFilter, results, sortMode]);
 
   async function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -154,20 +205,15 @@ export default function PapersPage() {
     setSubmittedQuery(keyword);
     setActualQuery(translatedKeyword);
 
-    const selectedSources: SourceName[] =
-      sourceFilter === "全部"
-        ? ["OpenAlex", "Crossref", "Internet Archive"]
-        : [sourceFilter];
-
     const settledResults = await Promise.allSettled(
-      selectedSources.map((source) => fetchSource(source, translatedKeyword)),
+      allSources.map((source) => fetchSource(source, translatedKeyword)),
     );
 
     const nextResults: SearchResult[] = [];
     const nextErrors: string[] = [];
 
     settledResults.forEach((result, index) => {
-      const source = selectedSources[index];
+      const source = allSources[index];
 
       if (result.status === "fulfilled") {
         nextResults.push(...result.value);
@@ -188,14 +234,13 @@ export default function PapersPage() {
 
         <div className="py-14">
           <p className="mb-4 text-sm tracking-[0.35em] text-amber-200/75">
-            OPEN RESEARCH SEARCH
+            CROSS-DATABASE SEARCH
           </p>
           <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">
             研究论著数据库
           </h1>
           <p className="mt-6 max-w-3xl text-lg leading-8 text-stone-300">
-            同时检索 OpenAlex、Crossref 与 Internet Archive 的真实公开数据。建议使用英文关键词，例如
-            Golden Horde、Jochid Ulus、Chagatai Khanate、Persian chronicles。
+            统一检索 OpenAlex、Crossref、Internet Archive、Google Books、WorldCat、Gallica 与 Qatar Digital Library。
           </p>
           <div className="mt-6 border-l border-amber-200/35 pl-5 text-amber-100/80">
             建议优先使用英文关键词进行学术检索
@@ -204,7 +249,7 @@ export default function PapersPage() {
 
         <section className="border border-amber-100/15 bg-stone-950/35 p-6">
           <form
-            className="grid gap-4 lg:grid-cols-[1fr_240px_auto]"
+            className="grid gap-4 lg:grid-cols-[1fr_180px_160px_auto]"
             onSubmit={handleSearch}
           >
             <label>
@@ -219,24 +264,19 @@ export default function PapersPage() {
               />
             </label>
 
-            <label>
-              <span className="mb-2 block text-sm text-amber-100/55">
-                来源选择
-              </span>
-              <select
-                className="search-input w-full"
-                onChange={(event) =>
-                  setSourceFilter(event.target.value as SourceFilter)
-                }
-                value={sourceFilter}
-              >
-                {sourceOptions.map((source) => (
-                  <option key={source} value={source}>
-                    {source}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <SelectControl
+              label="来源筛选"
+              onChange={(value) => setCategoryFilter(value as CategoryFilter)}
+              options={categoryOptions}
+              value={categoryFilter}
+            />
+
+            <SelectControl
+              label="排序"
+              onChange={(value) => setSortMode(value as SortMode)}
+              options={sortOptions}
+              value={sortMode}
+            />
 
             <button
               className="mt-auto min-h-12 border border-amber-200/40 px-8 text-amber-100 transition hover:bg-amber-100 hover:text-stone-950 disabled:cursor-not-allowed disabled:opacity-55"
@@ -253,17 +293,17 @@ export default function PapersPage() {
             </p>
             <div className="flex flex-wrap gap-2 text-sm text-stone-400">
               {quickSearchTags.map((sample) => (
-              <button
-                className="border border-stone-700/80 px-3 py-1.5 transition hover:border-amber-200/45 hover:text-amber-100"
-                key={sample}
-                onClick={() => {
-                  setQuery(sample);
-                  void runSearch(sample);
-                }}
-                type="button"
-              >
-                {sample}
-              </button>
+                <button
+                  className="border border-stone-700/80 px-3 py-1.5 transition hover:border-amber-200/45 hover:text-amber-100"
+                  key={sample}
+                  onClick={() => {
+                    setQuery(sample);
+                    void runSearch(sample);
+                  }}
+                  type="button"
+                >
+                  {sample}
+                </button>
               ))}
             </div>
           </div>
@@ -296,7 +336,7 @@ export default function PapersPage() {
             ))}
 
           {!isLoading &&
-            results.map((result) => (
+            visibleResults.map((result) => (
               <article
                 className="border border-amber-100/12 bg-stone-950/25 p-6 transition hover:border-amber-200/35 hover:bg-stone-900/45"
                 key={result.id}
@@ -305,19 +345,21 @@ export default function PapersPage() {
                   <h2 className="text-2xl font-medium text-stone-50">
                     {result.title}
                   </h2>
-                  <span className="w-fit border border-amber-100/20 px-2.5 py-1 text-xs text-amber-100/65">
-                    {result.source}
-                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="w-fit border border-amber-100/20 px-2.5 py-1 text-xs text-amber-100/65">
+                      {result.source}
+                    </span>
+                    <span className="w-fit border border-stone-700/80 px-2.5 py-1 text-xs text-stone-400">
+                      {result.category}
+                    </span>
+                  </div>
                 </div>
 
-                <dl className="mt-5 grid gap-3 text-sm text-stone-400 sm:grid-cols-2 lg:grid-cols-3">
+                <dl className="mt-5 grid gap-3 text-sm text-stone-400 sm:grid-cols-3">
                   <Meta label="作者" value={result.authors} />
                   <Meta label="年份" value={result.year} />
-                  <Meta label="出版来源/馆藏来源" value={result.venue} />
-                  <div className="lg:col-span-3">
-                    <dt className="text-amber-100/55">
-                      DOI 或资源链接
-                    </dt>
+                  <div>
+                    <dt className="text-amber-100/55">链接</dt>
                     <dd>
                       <a
                         className="break-all text-amber-100/70 transition hover:text-amber-100"
@@ -325,14 +367,14 @@ export default function PapersPage() {
                         rel="noreferrer"
                         target="_blank"
                       >
-                        {result.linkLabel}
+                        {result.linkUrl}
                       </a>
                     </dd>
                   </div>
                 </dl>
 
                 <div className="mt-5">
-                  <p className="mb-2 text-sm text-amber-100/55">摘要/描述</p>
+                  <p className="mb-2 text-sm text-amber-100/55">摘要</p>
                   <p className="leading-7 text-stone-300">
                     {result.abstract}
                   </p>
@@ -342,7 +384,7 @@ export default function PapersPage() {
 
           {!isLoading &&
             hasSearched &&
-            results.length === 0 &&
+            visibleResults.length === 0 &&
             sourceErrors.length === 0 && (
               <div className="border border-amber-100/12 bg-stone-950/25 p-8 text-stone-400">
                 未找到相关文献，请尝试英文关键词或更具体的术语。
@@ -355,15 +397,13 @@ export default function PapersPage() {
 }
 
 async function fetchSource(source: SourceName, keyword: string) {
-  if (source === "OpenAlex") {
-    return fetchOpenAlex(keyword);
-  }
-
-  if (source === "Crossref") {
-    return fetchCrossref(keyword);
-  }
-
-  return fetchInternetArchive(keyword);
+  if (source === "OpenAlex") return fetchOpenAlex(keyword);
+  if (source === "Crossref") return fetchCrossref(keyword);
+  if (source === "Internet Archive") return fetchInternetArchive(keyword);
+  if (source === "Google Books") return fetchGoogleBooks(keyword);
+  if (source === "Gallica") return fetchGallica(keyword);
+  if (source === "WorldCat") return fetchWorldCatLink(keyword);
+  return fetchQatarDigitalLibraryLink(keyword);
 }
 
 function translateKeyword(keyword: string) {
@@ -382,40 +422,32 @@ function translateKeyword(keyword: string) {
 
 async function fetchOpenAlex(keyword: string): Promise<SearchResult[]> {
   const response = await fetch(
-    `https://api.openalex.org/works?search=${encodeURIComponent(
-      keyword,
-    )}&per-page=20`,
+    `https://api.openalex.org/works?search=${encodeURIComponent(keyword)}&per-page=20`,
   );
 
-  if (!response.ok) {
-    throw new Error("OpenAlex request failed");
-  }
+  if (!response.ok) throw new Error("OpenAlex request failed");
 
   const data = (await response.json()) as OpenAlexResponse;
 
-  return (data.results ?? []).map((work) => ({
+  return (data.results ?? []).map((work, index) => ({
     id: `openalex-${work.id}`,
     source: "OpenAlex",
+    category: "论文",
     title: work.title ?? "无题名",
     authors: formatOpenAlexAuthors(work),
     year: work.publication_year?.toString() ?? "未知",
-    venue: work.primary_location?.source?.display_name ?? "未知来源",
-    linkLabel: work.doi ?? work.id,
     linkUrl: work.doi ?? work.id,
     abstract: formatOpenAlexAbstract(work),
+    relevance: index,
   }));
 }
 
 async function fetchCrossref(keyword: string): Promise<SearchResult[]> {
   const response = await fetch(
-    `https://api.crossref.org/works?query=${encodeURIComponent(
-      keyword,
-    )}&rows=20`,
+    `https://api.crossref.org/works?query=${encodeURIComponent(keyword)}&rows=20`,
   );
 
-  if (!response.ok) {
-    throw new Error("Crossref request failed");
-  }
+  if (!response.ok) throw new Error("Crossref request failed");
 
   const data = (await response.json()) as CrossrefResponse;
 
@@ -426,50 +458,140 @@ async function fetchCrossref(keyword: string): Promise<SearchResult[]> {
     return {
       id: `crossref-${work.DOI ?? work.URL ?? index}`,
       source: "Crossref",
+      category: "论文",
       title: firstValue(work.title) || "无题名",
       authors: formatCrossrefAuthors(work),
       year: formatCrossrefYear(work),
-      venue: firstValue(work["container-title"]) || "未知来源",
-      linkLabel: work.DOI ?? work.URL ?? "Crossref 记录",
       linkUrl: url,
       abstract: stripTags(work.abstract) || "暂无摘要",
+      relevance: index + 100,
     };
   });
 }
 
 async function fetchInternetArchive(keyword: string): Promise<SearchResult[]> {
   const response = await fetch(
-    `https://archive.org/advancedsearch.php?q=${encodeURIComponent(
-      keyword,
-    )}&fl[]=identifier&fl[]=title&fl[]=creator&fl[]=year&fl[]=language&fl[]=description&rows=20&page=1&output=json`,
+    `https://archive.org/advancedsearch.php?q=${encodeURIComponent(keyword)}&fl[]=identifier&fl[]=title&fl[]=creator&fl[]=year&fl[]=description&rows=20&page=1&output=json`,
   );
 
-  if (!response.ok) {
-    throw new Error("Internet Archive request failed");
-  }
+  if (!response.ok) throw new Error("Internet Archive request failed");
 
   const data = (await response.json()) as InternetArchiveResponse;
 
   return (data.response?.docs ?? [])
     .filter((doc) => Boolean(doc.identifier))
-    .map((doc) => {
+    .map((doc, index) => {
       const identifier = doc.identifier as string;
       const url = `https://archive.org/details/${identifier}`;
 
       return {
         id: `internet-archive-${identifier}`,
         source: "Internet Archive",
+        category: "数字馆藏",
         title: normalizeValue(doc.title) || "无题名",
         authors: normalizeValue(doc.creator) || "未知作者",
         year: normalizeValue(doc.year) || "未知",
-        venue: normalizeValue(doc.language)
-          ? `Internet Archive · ${normalizeValue(doc.language)}`
-          : "Internet Archive",
-        linkLabel: url,
         linkUrl: url,
         abstract: stripTags(normalizeValue(doc.description)) || "暂无摘要",
+        relevance: index + 200,
       };
     });
+}
+
+async function fetchGoogleBooks(keyword: string): Promise<SearchResult[]> {
+  const response = await fetch(
+    `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(keyword)}&maxResults=20`,
+  );
+
+  if (!response.ok) throw new Error("Google Books request failed");
+
+  const data = (await response.json()) as GoogleBooksResponse;
+
+  return (data.items ?? []).map((item, index) => ({
+    id: `google-books-${item.id}`,
+    source: "Google Books",
+    category: "图书",
+    title: item.volumeInfo?.title ?? "无题名",
+    authors: item.volumeInfo?.authors?.join("；") ?? "未知作者",
+    year: item.volumeInfo?.publishedDate?.slice(0, 4) ?? "未知",
+    linkUrl:
+      item.volumeInfo?.infoLink ??
+      `https://books.google.com/books?id=${item.id}`,
+    abstract: stripTags(item.volumeInfo?.description) || "暂无摘要",
+    relevance: index + 300,
+  }));
+}
+
+async function fetchGallica(keyword: string): Promise<SearchResult[]> {
+  const query = `dc.title all "${keyword}"`;
+  const response = await fetch(
+    `https://gallica.bnf.fr/SRU?operation=searchRetrieve&version=1.2&query=${encodeURIComponent(query)}&maximumRecords=20&startRecord=1`,
+  );
+
+  if (!response.ok) throw new Error("Gallica request failed");
+
+  const xml = await response.text();
+  const document = new DOMParser().parseFromString(xml, "application/xml");
+  const records = Array.from(document.getElementsByTagName("record"));
+
+  return records.map((record, index) => {
+    const title = getXmlText(record, "title") || "无题名";
+    const identifier = getXmlText(record, "identifier");
+    const url =
+      identifier && identifier.startsWith("http")
+        ? identifier
+        : `https://gallica.bnf.fr/services/engine/search/sru?operation=searchRetrieve&query=${encodeURIComponent(query)}`;
+
+    return {
+      id: `gallica-${identifier || index}`,
+      source: "Gallica",
+      category: "数字馆藏",
+      title,
+      authors: getXmlText(record, "creator") || "未知作者",
+      year: getXmlText(record, "date") || "未知",
+      linkUrl: url,
+      abstract: getXmlText(record, "description") || "暂无摘要",
+      relevance: index + 400,
+    };
+  });
+}
+
+async function fetchWorldCatLink(keyword: string): Promise<SearchResult[]> {
+  const url = `https://search.worldcat.org/search?q=${encodeURIComponent(keyword)}`;
+
+  return [
+    {
+      id: `worldcat-${keyword}`,
+      source: "WorldCat",
+      category: "图书",
+      title: `WorldCat 馆藏检索：${keyword}`,
+      authors: "WorldCat",
+      year: "未知",
+      linkUrl: url,
+      abstract: "WorldCat 官方检索入口。该来源需要通过馆藏页面查看具体图书、论文和馆藏记录。",
+      relevance: 500,
+    },
+  ];
+}
+
+async function fetchQatarDigitalLibraryLink(
+  keyword: string,
+): Promise<SearchResult[]> {
+  const url = `https://www.qdl.qa/en/search/site/${encodeURIComponent(keyword)}`;
+
+  return [
+    {
+      id: `qdl-${keyword}`,
+      source: "Qatar Digital Library",
+      category: "档案",
+      title: `Qatar Digital Library 检索：${keyword}`,
+      authors: "Qatar Digital Library",
+      year: "未知",
+      linkUrl: url,
+      abstract: "Qatar Digital Library 官方检索入口，适合查询海湾、伊斯兰史、手稿和英印档案资料。",
+      relevance: 600,
+    },
+  ];
 }
 
 function Header() {
@@ -483,8 +605,38 @@ function Header() {
         <Link href="/sources">历史史料</Link>
         <Link href="/topics">专题数据库</Link>
         <Link href="/resources">资源导航</Link>
+        <Link href="/upload">上传资源</Link>
       </nav>
     </header>
+  );
+}
+
+function SelectControl({
+  label,
+  onChange,
+  options,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  options: readonly string[];
+  value: string;
+}) {
+  return (
+    <label>
+      <span className="mb-2 block text-sm text-amber-100/55">{label}</span>
+      <select
+        className="search-input w-full"
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 
@@ -507,13 +659,8 @@ function formatOpenAlexAuthors(work: OpenAlexWork) {
 }
 
 function formatOpenAlexAbstract(work: OpenAlexWork) {
-  if (work.abstract) {
-    return work.abstract;
-  }
-
-  if (!work.abstract_inverted_index) {
-    return "暂无摘要";
-  }
+  if (work.abstract) return work.abstract;
+  if (!work.abstract_inverted_index) return "暂无摘要";
 
   const words = Object.entries(work.abstract_inverted_index)
     .flatMap(([word, positions]) =>
@@ -528,10 +675,7 @@ function formatOpenAlexAbstract(work: OpenAlexWork) {
 function formatCrossrefAuthors(work: CrossrefWork) {
   const authors =
     work.author?.map((author) => {
-      if (author.name) {
-        return author.name;
-      }
-
+      if (author.name) return author.name;
       return [author.given, author.family].filter(Boolean).join(" ");
     }) ?? [];
 
@@ -551,7 +695,9 @@ function firstValue(value?: string[]) {
   return value?.find(Boolean) ?? "";
 }
 
-function normalizeValue(value?: string | string[] | number | Array<string | number>) {
+function normalizeValue(
+  value?: string | string[] | number | Array<string | number>,
+) {
   if (Array.isArray(value)) {
     return value.filter(Boolean).join("；");
   }
@@ -564,4 +710,17 @@ function stripTags(value?: string) {
     ?.replace(/<[^>]*>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function getXmlText(parent: Element, tagName: string) {
+  return (
+    Array.from(parent.getElementsByTagName("*"))
+      .find((element) => element.localName === tagName)
+      ?.textContent?.trim() ?? ""
+  );
+}
+
+function parseYear(year: string) {
+  const parsedYear = Number.parseInt(year, 10);
+  return Number.isNaN(parsedYear) ? 0 : parsedYear;
 }

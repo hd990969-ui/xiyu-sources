@@ -269,6 +269,7 @@ function Header() {
         <Link href="/sources">历史史料</Link>
         <Link href="/topics">专题数据库</Link>
         <Link href="/resources">资源导航</Link>
+        <Link href="/upload">上传资源</Link>
       </nav>
     </header>
   );

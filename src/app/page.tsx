@@ -31,7 +31,9 @@ export default function Home() {
             INNER ASIAN SOURCES
           </span>
           <span className="hidden text-stone-500 sm:block">
-            Library Database
+            <Link className="transition hover:text-amber-100" href="/upload">
+              上传资源
+            </Link>
           </span>
         </div>
 

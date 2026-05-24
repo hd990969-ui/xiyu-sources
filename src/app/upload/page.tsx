@@ -1,0 +1,326 @@
+"use client";
+
+import Link from "next/link";
+import { ChangeEvent, FormEvent, useState } from "react";
+import { getSupabaseClient } from "../../lib/supabaseClient";
+
+const categories = [
+  "研究论著",
+  "历史史料",
+  "专题数据库",
+  "资源导航",
+  "藏学与喜马拉雅",
+  "蒙古学与内亚",
+  "突厥学与中亚",
+  "波斯文与伊斯兰世界",
+  "俄文与欧亚",
+  "中国资源",
+  "馆藏与数字图书馆",
+];
+
+const languages = [
+  "汉文",
+  "英文",
+  "俄文",
+  "日文",
+  "蒙古文",
+  "藏文",
+  "波斯文",
+  "阿拉伯文",
+  "土耳其文",
+  "哈萨克文",
+];
+
+const regions = [
+  "新疆",
+  "内蒙古",
+  "西藏",
+  "青海",
+  "中亚",
+  "南亚",
+  "俄罗斯",
+  "东欧",
+  "伊朗",
+];
+
+type UploadForm = {
+  title: string;
+  author: string;
+  year: string;
+  language: string;
+  category: string;
+  region: string;
+  description: string;
+  externalUrl: string;
+};
+
+const initialForm: UploadForm = {
+  title: "",
+  author: "",
+  year: "",
+  language: languages[0],
+  category: categories[0],
+  region: regions[0],
+  description: "",
+  externalUrl: "",
+};
+
+export default function UploadPage() {
+  const [form, setForm] = useState<UploadForm>(initialForm);
+  const [file, setFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  function updateField(field: keyof UploadForm, value: string) {
+    setForm((currentForm) => ({
+      ...currentForm,
+      [field]: value,
+    }));
+  }
+
+  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    setFile(event.target.files?.[0] ?? null);
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    setIsUploading(true);
+    setMessage("");
+    setError("");
+
+    try {
+      const supabase = getSupabaseClient();
+
+      if (!supabase) {
+        throw new Error("Supabase is not configured");
+      }
+
+      // Auth is intentionally not enforced yet. Future logic can read:
+      // const { data: { user } } = await supabase.auth.getUser();
+      let filePath = "";
+
+      if (file) {
+        if (file.type !== "application/pdf") {
+          throw new Error("Only PDF files are allowed");
+        }
+
+        const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+        filePath = `${Date.now()}-${safeName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("resource-files")
+          .upload(filePath, file);
+
+        if (uploadError) {
+          throw uploadError;
+        }
+      }
+
+      const { error: insertError } = await supabase.from("resources").insert({
+        title: form.title,
+        author: form.author,
+        year: form.year ? Number(form.year) : null,
+        language: form.language,
+        category: form.category,
+        region: form.region,
+        description: form.description,
+        external_url: form.externalUrl || null,
+        file_path: filePath || null,
+        status: "pending",
+      });
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      setForm(initialForm);
+      setFile(null);
+      setMessage("上传成功，等待审核。");
+    } catch {
+      setError("上传失败，请检查 Supabase 配置或稍后重试。");
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-[#08110f] text-stone-100">
+      <section className="mx-auto w-full max-w-5xl px-6 py-10 sm:px-10 lg:px-12">
+        <Header />
+
+        <div className="py-14">
+          <p className="mb-4 text-sm tracking-[0.35em] text-amber-200/75">
+            RESOURCE SUBMISSION
+          </p>
+          <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">
+            上传资源
+          </h1>
+          <p className="mt-6 max-w-3xl text-lg leading-8 text-stone-300">
+            提交研究论著、历史史料、专题数据库与学科资源。当前不启用登录，提交后进入待审核状态。
+          </p>
+        </div>
+
+        <form
+          className="border border-amber-100/15 bg-stone-950/35 p-6"
+          onSubmit={handleSubmit}
+        >
+          <div className="grid gap-5 sm:grid-cols-2">
+            <TextField
+              label="资源标题 title"
+              onChange={(value) => updateField("title", value)}
+              required
+              value={form.title}
+            />
+            <TextField
+              label="作者 author"
+              onChange={(value) => updateField("author", value)}
+              value={form.author}
+            />
+            <TextField
+              label="年份 year"
+              onChange={(value) => updateField("year", value)}
+              type="number"
+              value={form.year}
+            />
+            <SelectField
+              label="语种 language"
+              onChange={(value) => updateField("language", value)}
+              options={languages}
+              value={form.language}
+            />
+            <SelectField
+              label="分类 category"
+              onChange={(value) => updateField("category", value)}
+              options={categories}
+              value={form.category}
+            />
+            <SelectField
+              label="地域 region"
+              onChange={(value) => updateField("region", value)}
+              options={regions}
+              value={form.region}
+            />
+            <TextField
+              label="外部链接 externalUrl"
+              onChange={(value) => updateField("externalUrl", value)}
+              type="url"
+              value={form.externalUrl}
+            />
+          </div>
+
+          <label className="mt-5 block">
+            <span className="mb-2 block text-sm text-amber-100/55">
+              简介 description
+            </span>
+            <textarea
+              className="min-h-36 w-full border border-stone-700/70 bg-black/25 px-4 py-3 text-stone-100 outline-none placeholder:text-stone-500 focus:border-amber-200/55"
+              onChange={(event) =>
+                updateField("description", event.target.value)
+              }
+              value={form.description}
+            />
+          </label>
+
+          <label className="mt-5 block">
+            <span className="mb-2 block text-sm text-amber-100/55">
+              PDF文件 file
+            </span>
+            <input
+              accept="application/pdf,.pdf"
+              className="block w-full border border-stone-700/70 bg-black/25 px-4 py-3 text-stone-300 file:mr-4 file:border-0 file:bg-amber-100 file:px-4 file:py-2 file:text-stone-950"
+              onChange={handleFileChange}
+              type="file"
+            />
+          </label>
+
+          <div className="mt-6 flex flex-wrap items-center gap-4">
+            <button
+              className="min-h-12 border border-amber-200/40 px-8 text-amber-100 transition hover:bg-amber-100 hover:text-stone-950 disabled:cursor-not-allowed disabled:opacity-55"
+              disabled={isUploading || !form.title}
+              type="submit"
+            >
+              {isUploading ? "正在上传…" : "提交资源"}
+            </button>
+            {message && <p className="text-amber-100">{message}</p>}
+            {error && <p className="text-red-200">{error}</p>}
+          </div>
+        </form>
+      </section>
+    </main>
+  );
+}
+
+function Header() {
+  return (
+    <header className="flex flex-wrap items-center justify-between gap-4 border-b border-amber-100/15 pb-6">
+      <Link className="text-sm tracking-[0.22em] text-amber-100/70" href="/">
+        西域文献史料汇集
+      </Link>
+      <nav className="flex flex-wrap gap-4 text-sm text-stone-400">
+        <Link href="/papers">研究论著</Link>
+        <Link href="/sources">历史史料</Link>
+        <Link href="/topics">专题数据库</Link>
+        <Link href="/resources">资源导航</Link>
+        <Link href="/upload">上传资源</Link>
+      </nav>
+    </header>
+  );
+}
+
+function TextField({
+  label,
+  onChange,
+  required,
+  type = "text",
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  required?: boolean;
+  type?: string;
+  value: string;
+}) {
+  return (
+    <label>
+      <span className="mb-2 block text-sm text-amber-100/55">{label}</span>
+      <input
+        className="search-input w-full"
+        onChange={(event) => onChange(event.target.value)}
+        required={required}
+        type={type}
+        value={value}
+      />
+    </label>
+  );
+}
+
+function SelectField({
+  label,
+  onChange,
+  options,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  options: string[];
+  value: string;
+}) {
+  return (
+    <label>
+      <span className="mb-2 block text-sm text-amber-100/55">{label}</span>
+      <select
+        className="search-input w-full"
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
+      >
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
