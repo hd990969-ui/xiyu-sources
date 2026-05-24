@@ -1,74 +1,93 @@
 import Link from "next/link";
+import { SiteHeader } from "./components/SiteHeader";
 
 const actions = [
   {
     title: "研究论著检索",
+    subtitle: "Scholarship Search",
+    description: "跨数据库检索论文、专著、书评与研究目录。",
     href: "/papers",
   },
   {
     title: "历史史料检索",
+    subtitle: "Primary Sources",
+    description: "整理多语种史料、编年史、行纪与档案线索。",
     href: "/sources",
   },
   {
     title: "专题数据库",
+    subtitle: "Special Collections",
+    description: "面向人物、地名、版本和文献群的专题入口。",
     href: "/topics",
   },
   {
     title: "资源导航",
+    subtitle: "Resource Guide",
+    description: "连接图书馆、馆藏、期刊平台和数字人文项目。",
     href: "/resources",
   },
 ];
 
+const manuscriptItems = [
+  ["Manuscripts", "敦煌文书与写本目录"],
+  ["Archives", "边疆档案与馆藏线索"],
+  ["Bibliography", "多语种研究书目"],
+  ["Digital Collections", "开放数字资源入口"],
+  ["Mongol Empire", "诸兀鲁思史料网络"],
+  ["Central Asia", "绿洲城市与丝路交通"],
+];
+
 export default function Home() {
   return (
-    <main className="min-h-screen overflow-hidden bg-[#08110f] text-stone-100">
-      <div className="absolute inset-0 -z-0 bg-[radial-gradient(circle_at_18%_20%,rgba(171,124,54,0.18),transparent_28%),radial-gradient(circle_at_86%_10%,rgba(57,91,83,0.35),transparent_32%),linear-gradient(135deg,rgba(255,255,255,0.04)_0,transparent_32%)]" />
-      <div className="absolute inset-x-0 top-0 -z-0 h-px bg-gradient-to-r from-transparent via-amber-200/50 to-transparent" />
+    <main className="site-shell">
+      <section className="content-wrap">
+        <SiteHeader />
 
-      <section className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-6 py-16 sm:px-10 lg:px-12">
-        <div className="mb-16 flex items-center justify-between border-b border-amber-100/15 pb-6 text-sm text-stone-400">
-          <span className="tracking-[0.28em] text-amber-100/70">
-            INNER ASIAN SOURCES
-          </span>
-          <span className="hidden text-stone-500 sm:block">
-            <Link className="transition hover:text-amber-100" href="/upload">
-              上传资源
-            </Link>
-          </span>
-        </div>
-
-        <div className="grid gap-14 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+        <div className="grid min-h-[72vh] gap-14 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
           <div>
-            <div className="mb-8 h-16 w-px bg-gradient-to-b from-amber-200/80 to-transparent" />
-            <p className="mb-5 text-sm tracking-[0.35em] text-amber-200/75">
-              西域 · 内亚 · 中亚
+            <p className="section-eyebrow">
+              SILK ROAD · INNER ASIA · CENTRAL EURASIA
             </p>
-            <h1 className="max-w-4xl text-5xl font-semibold tracking-tight text-stone-50 sm:text-7xl">
+            <h1 className="mt-7 max-w-4xl text-5xl font-semibold tracking-tight text-[var(--paper)] sm:text-7xl">
               西域文献史料汇集
             </h1>
-            <p className="mt-7 max-w-3xl text-xl leading-8 text-amber-50/72 sm:text-2xl">
+            <p className="mt-7 max-w-3xl text-xl leading-8 text-[color:rgba(239,226,195,0.82)] sm:text-2xl">
               Inner Asian Historical Sources and Scholarship Database
+            </p>
+            <p className="mt-8 max-w-2xl text-lg leading-9 text-[#cfc7b4]">
+              汇集西域、内亚、中亚及蒙古帝国诸兀鲁思相关的多语种研究论著、历史史料、馆藏资源与数字文献入口。
             </p>
           </div>
 
-          <div className="border-l border-amber-100/18 pl-7">
-            <p className="text-lg leading-9 text-stone-300">
-              本项目旨在汇集西域、内亚、中亚及蒙古帝国诸兀鲁思相关的多语种研究文献与历史史料。研究范围包括蒙古学、突厥学、满学、藏学、西夏学，以及新疆、西藏、内蒙古、青海、中亚、南亚等区域研究。
-            </p>
+          <div className="manuscript-panel">
+            {manuscriptItems.map(([title, text]) => (
+              <div className="archive-slip" key={title}>
+                <span>{title}</span>
+                <strong>{text}</strong>
+              </div>
+            ))}
           </div>
         </div>
 
-        <div className="mt-20 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 pb-16 sm:grid-cols-2 lg:grid-cols-4">
           {actions.map((action) => (
             <Link
-              className="group flex min-h-36 flex-col justify-between border border-amber-100/15 bg-stone-950/35 p-6 transition duration-300 hover:-translate-y-1 hover:border-amber-200/50 hover:bg-stone-900/70"
+              className="scholar-card lift-card group flex min-h-52 flex-col justify-between p-6"
               href={action.href}
               key={action.href}
             >
-              <span className="text-lg font-medium text-stone-100">
-                {action.title}
-              </span>
-              <span className="mt-8 flex items-center justify-between text-sm text-amber-100/60">
+              <div>
+                <p className="mb-4 text-xs tracking-[0.24em] text-[color:rgba(214,179,90,0.72)]">
+                  {action.subtitle}
+                </p>
+                <h2 className="text-xl font-medium text-[var(--paper)]">
+                  {action.title}
+                </h2>
+                <p className="mt-4 leading-7 text-[#aaa28f]">
+                  {action.description}
+                </p>
+              </div>
+              <span className="mt-7 flex items-center justify-between text-sm text-[color:rgba(214,179,90,0.72)]">
                 <span>进入数据库</span>
                 <span className="transition group-hover:translate-x-1">→</span>
               </span>

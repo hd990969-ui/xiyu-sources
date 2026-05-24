@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
+import { PageHero } from "../components/PageHero";
+import { SiteHeader } from "../components/SiteHeader";
 
 const resourceGroups = [
   {
@@ -180,22 +181,16 @@ export default function ResourcesPage() {
   }, [searchText]);
 
   return (
-    <main className="min-h-screen bg-[#08110f] text-stone-100">
-      <section className="mx-auto w-full max-w-6xl px-6 py-10 sm:px-10 lg:px-12">
-        <Header />
-        <div className="py-14">
-          <p className="mb-4 text-sm tracking-[0.35em] text-amber-200/75">
-            DISCIPLINARY RESOURCE GUIDE
-          </p>
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">
-            资源导航
-          </h1>
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-stone-300">
-            按学科、语种和馆藏类型整理开放数据库、图书馆、期刊平台和数字文献资源。
-          </p>
-        </div>
+    <main className="site-shell">
+      <section className="content-wrap">
+        <SiteHeader />
+        <PageHero
+          description="按学科、语种和馆藏类型整理开放数据库、图书馆、期刊平台和数字文献资源。"
+          eyebrow="DISCIPLINARY RESOURCE GUIDE"
+          title="资源导航"
+        />
 
-        <section className="mb-10 border border-amber-100/15 bg-stone-950/35 p-6">
+        <section className="scholar-card mb-10 p-6">
           <label>
             <span className="mb-2 block text-sm text-amber-100/55">
               实时筛选资源
@@ -212,7 +207,7 @@ export default function ResourcesPage() {
         <div className="space-y-12 pb-12">
           {filteredGroups.map((group, index) => (
             <section key={group.title}>
-              <div className="mb-5 flex items-end justify-between gap-4 border-b border-amber-100/15 pb-4">
+              <div className="resource-heading mb-5 justify-between">
                 <h2 className="text-2xl font-medium text-stone-50">
                   {index + 1} {group.title}
                 </h2>
@@ -224,7 +219,7 @@ export default function ResourcesPage() {
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {group.resources.map((resource) => (
                   <a
-                    className="group flex min-h-48 flex-col justify-between border border-amber-100/12 bg-stone-950/25 p-6 transition hover:-translate-y-1 hover:border-amber-200/35 hover:bg-stone-900/50"
+                    className="scholar-card lift-card group flex min-h-48 flex-col justify-between p-6"
                     href={resource.url}
                     key={`${group.title}-${resource.name}`}
                     rel="noreferrer"
@@ -248,29 +243,12 @@ export default function ResourcesPage() {
           ))}
 
           {filteredGroups.length === 0 && (
-            <div className="border border-amber-100/12 bg-stone-950/25 p-8 text-stone-400">
+            <div className="scholar-card p-8 text-[#aaa28f]">
               未找到匹配资源，请尝试其他关键词。
             </div>
           )}
         </div>
       </section>
     </main>
-  );
-}
-
-function Header() {
-  return (
-    <header className="flex flex-wrap items-center justify-between gap-4 border-b border-amber-100/15 pb-6">
-      <Link className="text-sm tracking-[0.22em] text-amber-100/70" href="/">
-        西域文献史料汇集
-      </Link>
-      <nav className="flex flex-wrap gap-4 text-sm text-stone-400">
-        <Link href="/papers">研究论著</Link>
-        <Link href="/sources">历史史料</Link>
-        <Link href="/topics">专题数据库</Link>
-        <Link href="/resources">资源导航</Link>
-        <Link href="/upload">上传资源</Link>
-      </nav>
-    </header>
   );
 }

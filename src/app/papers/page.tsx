@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useMemo, useState } from "react";
+import { PageHero } from "../components/PageHero";
+import { SiteHeader } from "../components/SiteHeader";
 
 type SourceName =
   | "OpenAlex"
@@ -228,26 +229,19 @@ export default function PapersPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#08110f] text-stone-100">
-      <section className="mx-auto w-full max-w-6xl px-6 py-10 sm:px-10 lg:px-12">
-        <Header />
-
-        <div className="py-14">
-          <p className="mb-4 text-sm tracking-[0.35em] text-amber-200/75">
-            CROSS-DATABASE SEARCH
-          </p>
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">
-            研究论著数据库
-          </h1>
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-stone-300">
-            统一检索 OpenAlex、Crossref、Internet Archive、Google Books、WorldCat、Gallica 与 Qatar Digital Library。
-          </p>
-          <div className="mt-6 border-l border-amber-200/35 pl-5 text-amber-100/80">
-            建议优先使用英文关键词进行学术检索
-          </div>
+    <main className="site-shell">
+      <section className="content-wrap">
+        <SiteHeader />
+        <PageHero
+          description="统一检索 OpenAlex、Crossref、Internet Archive、Google Books、WorldCat、Gallica 与 Qatar Digital Library。"
+          eyebrow="CROSS-DATABASE SEARCH"
+          title="研究论著数据库"
+        />
+        <div className="mb-8 border-l border-[var(--gold)] pl-5 text-[color:rgba(214,179,90,0.86)]">
+          建议优先使用英文关键词进行学术检索
         </div>
 
-        <section className="border border-amber-100/15 bg-stone-950/35 p-6">
+        <section className="scholar-card p-6">
           <form
             className="grid gap-4 lg:grid-cols-[1fr_180px_160px_auto]"
             onSubmit={handleSearch}
@@ -279,7 +273,7 @@ export default function PapersPage() {
             />
 
             <button
-              className="mt-auto min-h-12 border border-amber-200/40 px-8 text-amber-100 transition hover:bg-amber-100 hover:text-stone-950 disabled:cursor-not-allowed disabled:opacity-55"
+              className="gold-button mt-auto"
               disabled={isLoading}
               type="submit"
             >
@@ -294,7 +288,7 @@ export default function PapersPage() {
             <div className="flex flex-wrap gap-2 text-sm text-stone-400">
               {quickSearchTags.map((sample) => (
                 <button
-                  className="border border-stone-700/80 px-3 py-1.5 transition hover:border-amber-200/45 hover:text-amber-100"
+                  className="tag-button"
                   key={sample}
                   onClick={() => {
                     setQuery(sample);
@@ -309,7 +303,7 @@ export default function PapersPage() {
           </div>
 
           {actualQuery && (
-            <div className="mt-5 border border-amber-100/12 bg-black/15 p-4 text-sm text-stone-400">
+            <div className="mt-5 border border-[var(--border)] bg-black/15 p-4 text-sm text-[#aaa28f]">
               <span className="text-amber-100/65">实际检索词：</span>
               {submittedQuery === actualQuery
                 ? actualQuery
@@ -320,7 +314,7 @@ export default function PapersPage() {
 
         <section className="grid gap-4 py-10">
           {isLoading && (
-            <div className="border border-amber-100/12 bg-stone-950/25 p-8 text-stone-300">
+            <div className="scholar-card p-8 text-[#cfc7b4]">
               正在检索真实文献数据……
             </div>
           )}
@@ -338,7 +332,7 @@ export default function PapersPage() {
           {!isLoading &&
             visibleResults.map((result) => (
               <article
-                className="border border-amber-100/12 bg-stone-950/25 p-6 transition hover:border-amber-200/35 hover:bg-stone-900/45"
+                className="scholar-card p-6"
                 key={result.id}
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -386,7 +380,7 @@ export default function PapersPage() {
             hasSearched &&
             visibleResults.length === 0 &&
             sourceErrors.length === 0 && (
-              <div className="border border-amber-100/12 bg-stone-950/25 p-8 text-stone-400">
+              <div className="scholar-card p-8 text-[#aaa28f]">
                 未找到相关文献，请尝试英文关键词或更具体的术语。
               </div>
             )}
@@ -592,23 +586,6 @@ async function fetchQatarDigitalLibraryLink(
       relevance: 600,
     },
   ];
-}
-
-function Header() {
-  return (
-    <header className="flex flex-wrap items-center justify-between gap-4 border-b border-amber-100/15 pb-6">
-      <Link className="text-sm tracking-[0.22em] text-amber-100/70" href="/">
-        西域文献史料汇集
-      </Link>
-      <nav className="flex flex-wrap gap-4 text-sm text-stone-400">
-        <Link href="/papers">研究论著</Link>
-        <Link href="/sources">历史史料</Link>
-        <Link href="/topics">专题数据库</Link>
-        <Link href="/resources">资源导航</Link>
-        <Link href="/upload">上传资源</Link>
-      </nav>
-    </header>
-  );
 }
 
 function SelectControl({

@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { ChangeEvent, FormEvent, useState } from "react";
+import { PageHero } from "../components/PageHero";
+import { SiteHeader } from "../components/SiteHeader";
 import { getSupabaseClient } from "../../lib/supabaseClient";
 
 const categories = [
@@ -146,24 +147,17 @@ export default function UploadPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#08110f] text-stone-100">
-      <section className="mx-auto w-full max-w-5xl px-6 py-10 sm:px-10 lg:px-12">
-        <Header />
-
-        <div className="py-14">
-          <p className="mb-4 text-sm tracking-[0.35em] text-amber-200/75">
-            RESOURCE SUBMISSION
-          </p>
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">
-            上传资源
-          </h1>
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-stone-300">
-            提交研究论著、历史史料、专题数据库与学科资源。当前不启用登录，提交后进入待审核状态。
-          </p>
-        </div>
+    <main className="site-shell">
+      <section className="content-wrap max-w-5xl">
+        <SiteHeader />
+        <PageHero
+          description="请提交与西域、内亚、中亚、蒙古史、藏学、满学、突厥学、波斯文献等相关的研究论著、历史史料或数字资源。"
+          eyebrow="RESOURCE SUBMISSION"
+          title="提交学术资源"
+        />
 
         <form
-          className="border border-amber-100/15 bg-stone-950/35 p-6"
+          className="scholar-card p-6"
           onSubmit={handleSubmit}
         >
           <div className="grid gap-5 sm:grid-cols-2">
@@ -215,7 +209,7 @@ export default function UploadPage() {
               简介 description
             </span>
             <textarea
-              className="min-h-36 w-full border border-stone-700/70 bg-black/25 px-4 py-3 text-stone-100 outline-none placeholder:text-stone-500 focus:border-amber-200/55"
+              className="search-input min-h-36 w-full py-3"
               onChange={(event) =>
                 updateField("description", event.target.value)
               }
@@ -229,7 +223,7 @@ export default function UploadPage() {
             </span>
             <input
               accept="application/pdf,.pdf"
-              className="block w-full border border-stone-700/70 bg-black/25 px-4 py-3 text-stone-300 file:mr-4 file:border-0 file:bg-amber-100 file:px-4 file:py-2 file:text-stone-950"
+              className="block w-full border border-[var(--border)] bg-black/25 px-4 py-3 text-stone-300 file:mr-4 file:border-0 file:bg-[var(--gold)] file:px-4 file:py-2 file:text-[#07110f]"
               onChange={handleFileChange}
               type="file"
             />
@@ -237,7 +231,7 @@ export default function UploadPage() {
 
           <div className="mt-6 flex flex-wrap items-center gap-4">
             <button
-              className="min-h-12 border border-amber-200/40 px-8 text-amber-100 transition hover:bg-amber-100 hover:text-stone-950 disabled:cursor-not-allowed disabled:opacity-55"
+              className="gold-button"
               disabled={isUploading || !form.title}
               type="submit"
             >
@@ -249,23 +243,6 @@ export default function UploadPage() {
         </form>
       </section>
     </main>
-  );
-}
-
-function Header() {
-  return (
-    <header className="flex flex-wrap items-center justify-between gap-4 border-b border-amber-100/15 pb-6">
-      <Link className="text-sm tracking-[0.22em] text-amber-100/70" href="/">
-        西域文献史料汇集
-      </Link>
-      <nav className="flex flex-wrap gap-4 text-sm text-stone-400">
-        <Link href="/papers">研究论著</Link>
-        <Link href="/sources">历史史料</Link>
-        <Link href="/topics">专题数据库</Link>
-        <Link href="/resources">资源导航</Link>
-        <Link href="/upload">上传资源</Link>
-      </nav>
-    </header>
   );
 }
 

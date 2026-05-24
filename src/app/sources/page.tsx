@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { PageHero } from "../components/PageHero";
+import { SiteHeader } from "../components/SiteHeader";
 
 const sources = [
   ["《集史》", "拉施特丁", "14世纪初", "波斯文", "Karl Jahn 校订本；Wheeler Thackston 英译本"],
@@ -25,23 +26,20 @@ const sources = [
 
 export default function SourcesPage() {
   return (
-    <main className="min-h-screen bg-[#08110f] text-stone-100">
-      <section className="mx-auto w-full max-w-6xl px-6 py-10 sm:px-10 lg:px-12">
-        <Header />
-        <div className="py-14">
-          <p className="mb-4 text-sm tracking-[0.35em] text-amber-200/75">
-            HISTORICAL SOURCE DATABASE
-          </p>
-          <h1 className="text-4xl font-semibold tracking-tight sm:text-6xl">
-            历史史料数据库
-          </h1>
-        </div>
+    <main className="site-shell">
+      <section className="content-wrap">
+        <SiteHeader />
+        <PageHero
+          description="汇集波斯文、汉文、蒙古文、藏文、拉丁文等多语种历史史料，展示版本、译本与学界通行整理本。"
+          eyebrow="HISTORICAL SOURCE DATABASE"
+          title="历史史料数据库"
+        />
 
         <section className="grid gap-4 pb-12">
           {sources.map(([name, author, era, language, edition]) => (
-            <article className="border border-amber-100/12 bg-stone-950/25 p-6 hover:border-amber-200/35" key={name}>
+            <article className="scholar-card p-6" key={name}>
               <h2 className="text-2xl font-medium text-stone-50">{name}</h2>
-              <dl className="mt-4 grid gap-2 text-sm text-stone-400 sm:grid-cols-4">
+              <dl className="mt-4 grid gap-2 text-sm text-[#aaa28f] sm:grid-cols-4">
                 <div><dt className="text-amber-100/55">作者</dt><dd>{author}</dd></div>
                 <div><dt className="text-amber-100/55">年代</dt><dd>{era}</dd></div>
                 <div><dt className="text-amber-100/55">语种</dt><dd>{language}</dd></div>
@@ -52,20 +50,5 @@ export default function SourcesPage() {
         </section>
       </section>
     </main>
-  );
-}
-
-function Header() {
-  return (
-    <header className="flex flex-wrap items-center justify-between gap-4 border-b border-amber-100/15 pb-6">
-      <Link className="text-sm tracking-[0.22em] text-amber-100/70" href="/">西域文献史料汇集</Link>
-      <nav className="flex flex-wrap gap-4 text-sm text-stone-400">
-        <Link href="/papers">研究论著</Link>
-        <Link href="/sources">历史史料</Link>
-        <Link href="/topics">专题数据库</Link>
-        <Link href="/resources">资源导航</Link>
-        <Link href="/upload">上传资源</Link>
-      </nav>
-    </header>
   );
 }
