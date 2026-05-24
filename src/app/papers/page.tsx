@@ -158,7 +158,7 @@ export default function PapersPage() {
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("全部");
   const [sortMode, setSortMode] = useState<SortMode>("相关度");
   const [results, setResults] = useState<SearchResult[]>([]);
-  const [sourceErrors, setSourceErrors] = useState<string[]>([]);
+  const [sourceNotices, setSourceNotices] = useState<string[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -190,7 +190,7 @@ export default function PapersPage() {
     const keyword = rawKeyword.trim();
     if (!keyword) {
       setResults([]);
-      setSourceErrors([]);
+      setSourceNotices([]);
       setHasSearched(false);
       setSubmittedQuery("");
       setActualQuery("");
@@ -201,7 +201,7 @@ export default function PapersPage() {
 
     setIsLoading(true);
     setResults([]);
-    setSourceErrors([]);
+    setSourceNotices([]);
     setHasSearched(true);
     setSubmittedQuery(keyword);
     setActualQuery(translatedKeyword);
@@ -211,20 +211,24 @@ export default function PapersPage() {
     );
 
     const nextResults: SearchResult[] = [];
-    const nextErrors: string[] = [];
+    const nextNotices: string[] = [];
 
     settledResults.forEach((result, index) => {
       const source = allSources[index];
 
       if (result.status === "fulfilled") {
-        nextResults.push(...result.value);
+        if (result.value.length === 0) {
+          nextNotices.push(formatSourceNotice(source));
+        } else {
+          nextResults.push(...result.value);
+        }
       } else {
-        nextErrors.push(`${source} 检索失败`);
+        nextNotices.push(formatSourceNotice(source));
       }
     });
 
     setResults(nextResults);
-    setSourceErrors(nextErrors);
+    setSourceNotices(nextNotices);
     setIsLoading(false);
   }
 
@@ -320,16 +324,6 @@ export default function PapersPage() {
           )}
 
           {!isLoading &&
-            sourceErrors.map((message) => (
-              <div
-                className="border border-red-300/25 bg-red-950/20 p-5 text-red-100"
-                key={message}
-              >
-                {message}
-              </div>
-            ))}
-
-          {!isLoading &&
             visibleResults.map((result) => (
               <article
                 className="scholar-card p-6"
@@ -379,11 +373,21 @@ export default function PapersPage() {
           {!isLoading &&
             hasSearched &&
             visibleResults.length === 0 &&
-            sourceErrors.length === 0 && (
+            sourceNotices.length === 0 && (
               <div className="scholar-card p-8 text-[#aaa28f]">
                 未找到相关文献，请尝试英文关键词或更具体的术语。
               </div>
             )}
+
+          {!isLoading &&
+            sourceNotices.map((message) => (
+              <div
+                className="border border-[var(--border)] bg-[color:rgba(13,27,23,0.62)] px-4 py-3 text-sm text-[#aaa28f]"
+                key={message}
+              >
+                {message}
+              </div>
+            ))}
         </section>
       </section>
     </main>
@@ -398,6 +402,10 @@ async function fetchSource(source: SourceName, keyword: string) {
   if (source === "Gallica") return fetchGallica(keyword);
   if (source === "WorldCat") return fetchWorldCatLink(keyword);
   return fetchQatarDigitalLibraryLink(keyword);
+}
+
+function formatSourceNotice(source: SourceName) {
+  return `${source} 暂无结果或暂时不可用`;
 }
 
 function translateKeyword(keyword: string) {
