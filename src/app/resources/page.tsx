@@ -76,6 +76,22 @@ const resourceGroups = [
     ],
   },
   {
+    title: "开放书目与文献发现",
+    resources: [
+      {
+        name: "Anna's Archive",
+        description:
+          "开放书目与文献发现入口，可用于检索图书、论文和数字化文献线索。",
+        url: "https://annas-archive.org/",
+      },
+      {
+        name: "Z-Library",
+        description: "电子书与学术资料检索入口。",
+        url: "https://z-library.sk/",
+      },
+    ],
+  },
+  {
     title: "蒙古学与内亚",
     resources: [
       {
@@ -222,7 +238,7 @@ export default function ResourcesPage() {
                     className="scholar-card lift-card group flex min-h-48 flex-col justify-between p-6"
                     href={resource.url}
                     key={`${group.title}-${resource.name}`}
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     target="_blank"
                   >
                     <div>
@@ -233,8 +249,8 @@ export default function ResourcesPage() {
                         {resource.description}
                       </p>
                     </div>
-                    <span className="mt-6 break-all text-sm text-amber-100/60 transition group-hover:text-amber-100">
-                      {resource.url} →
+                    <span className="mt-6 inline-flex w-fit border border-amber-200/25 px-4 py-2 text-sm text-amber-100/70 transition group-hover:border-amber-200/55 group-hover:text-amber-100">
+                      访问资源→
                     </span>
                   </a>
                 ))}
