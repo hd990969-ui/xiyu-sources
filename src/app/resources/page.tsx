@@ -83,11 +83,13 @@ const resourceGroups = [
         description:
           "开放书目与文献发现入口，可用于检索图书、论文和数字化文献线索。",
         url: "https://annas-archive.org/",
+        highlight: true,
       },
       {
         name: "Z-Library",
         description: "电子书与学术资料检索入口。",
         url: "https://z-library.sk/",
+        highlight: true,
       },
     ],
   },
@@ -235,22 +237,34 @@ export default function ResourcesPage() {
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {group.resources.map((resource) => (
                   <a
-                    className="scholar-card lift-card group flex min-h-48 flex-col justify-between p-6"
+                    className={`scholar-card lift-card group flex min-h-48 flex-col justify-between p-6 ${
+                      resource.highlight
+                        ? "border-2 border-yellow-500/70 bg-gradient-to-br from-emerald-950/50 to-emerald-900/40"
+                        : ""
+                    }`}
                     href={resource.url}
                     key={`${group.title}-${resource.name}`}
                     rel="noopener noreferrer"
                     target="_blank"
                   >
                     <div>
-                      <h3 className="text-2xl font-medium text-stone-50">
+                      <h3 className={`text-2xl font-medium ${
+                        resource.highlight ? "text-yellow-300" : "text-stone-50"
+                      }`}>
                         {resource.name}
                       </h3>
-                      <p className="mt-4 leading-7 text-stone-400">
+                      <p className={`mt-4 leading-7 ${
+                        resource.highlight ? "text-emerald-200/80" : "text-stone-400"
+                      }`}>
                         {resource.description}
                       </p>
                     </div>
-                    <span className="mt-6 inline-flex w-fit border border-amber-200/25 px-4 py-2 text-sm text-amber-100/70 transition group-hover:border-amber-200/55 group-hover:text-amber-100">
-                      访问资源→
+                    <span className={`mt-6 inline-flex w-fit border px-4 py-2 text-sm transition ${
+                      resource.highlight
+                        ? "border-yellow-500/50 text-yellow-300 group-hover:border-yellow-400 group-hover:text-yellow-200"
+                        : "border-amber-200/25 text-amber-100/70 group-hover:border-amber-200/55 group-hover:text-amber-100"
+                    }`}>
+                      进入资源→
                     </span>
                   </a>
                 ))}
